@@ -1,13 +1,35 @@
 import pygame
 import random
+import math
+import os
 from config import *
+
+ASSET_DIR = os.path.join(os.path.dirname(__file__), "assets")
+
+
+class SilentSound:
+    def play(self):
+        return None
+
+
+def load_image(filename):
+    return pygame.image.load(os.path.join(ASSET_DIR, filename))
+
+
+def load_sound(filename):
+    try:
+        return pygame.mixer.Sound(os.path.join(ASSET_DIR, filename))
+    except pygame.error:
+        return SilentSound()
+
 
 class Player:
     def __init__(self):
-        self.image = PLAYER_IDLE_IMG
-        self.shooting_image = PLAYER_SHOOTING_IMG
+        self.image = load_image("player_1.png")
+        self.shooting_image = load_image("player_5.png")
+        self.shoot_sound = load_sound("shoot.wav")
         self.rect = self.image.get_rect(midbottom=(SCREEN_WIDTH / 2, SCREEN_HEIGHT - 10))
-        self.speed = 15
+        self.speed = 10
         self.bullets = []
         self.shooting = False
         self.shooting_timer = 0
@@ -20,7 +42,7 @@ class Player:
 
     def shoot(self):
         self.bullets.append(Bullet(self.rect.centerx, self.rect.top))
-        SHOOT_SOUND.play()
+        self.shoot_sound.play()
         self.shooting = True
         self.shooting_timer = 10
 
@@ -35,7 +57,7 @@ class Player:
 
 class Bullet:
     def __init__(self, x, y):
-        self.image = BULLET_IMG
+        self.image = load_image("Bullet.gif")
         self.rect = self.image.get_rect(midbottom=(x, y))
         self.speed = 10
 
@@ -47,7 +69,7 @@ class Bullet:
 
 class Enemy:
     def __init__(self):
-        self.image = ENEMY_IMG
+        self.image = load_image("enemy_1.png")
         self.rect = self.image.get_rect(midtop=(random.randint(0, SCREEN_WIDTH - self.image.get_width()), random.randint(0, 200)))
         self.speed = 2
 
@@ -59,7 +81,7 @@ class Enemy:
 
 class Boss:
     def __init__(self):
-        self.image = BOSS_IMG
+        self.image = load_image("boss.png")
         self.rect = self.image.get_rect(midtop=(SCREEN_WIDTH / 2, -100))
         self.speed = 3
         self.angle = 0

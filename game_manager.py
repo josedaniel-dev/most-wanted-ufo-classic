@@ -3,6 +3,9 @@ import pygame
 import random
 import json
 import math
+import sys
+
+LEADERBOARD_FILE = "leaderboard.json"
 
 class GameManager:
     def __init__(self):
@@ -61,7 +64,8 @@ class GameManager:
         # Player properties
         self.player_width = 60
         self.player_height = 25
-        self.player_speed = 15
+        self.default_player_speed = 10
+        self.player_speed = self.default_player_speed
         self.player_x = self.SCREEN_WIDTH / 2 - self.player_width / 2
         self.player_y = self.SCREEN_HEIGHT - self.player_height - 10
 
@@ -101,7 +105,7 @@ class GameManager:
     def game_initialize(self):
         self.score = 0
         self.lives = 5
-        self.player_speed = 15
+        self.player_speed = self.default_player_speed
         self.default_shoot_cooldown = 5
         self.shoot_cooldown = self.default_shoot_cooldown
         self.player_x = self.SCREEN_WIDTH / 2 - self.player_width / 2
@@ -138,18 +142,38 @@ class GameManager:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
-                    exit()
+                    sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_c:
-                        self.game_initialize()  # Continue the game with current lives and score
+                        self.game_initialize()
                         return
                     if event.key == pygame.K_ESCAPE:
                         pygame.quit()
-                        exit()
+                        sys.exit()
 
     # Spawn a new enemy
     def spawn_enemy(self):
         self.enemies.append([random.randint(0, self.SCREEN_WIDTH - self.enemy_size), random.randint(0, 200)])
+
+    def show_warp_speed_message(self, message, duration_ms=1500):
+        self.screen.fill(self.black)
+        message_text = self.menu_font.render(message, True, self.green)
+        self.screen.blit(
+            message_text,
+            (
+                self.SCREEN_WIDTH // 2 - message_text.get_width() // 2,
+                self.SCREEN_HEIGHT // 2 - message_text.get_height() // 2,
+            ),
+        )
+        pygame.display.flip()
+        pygame.time.wait(duration_ms)
+
+    def start_warp_speed_level(self):
+        self.background_speed = 6
+        self.enemy_speed = 3
+        self.boss_appeared = False
+        self.boss_bullets.clear()
+        self.enemies.clear()
 
     def main_menu(self):
         menu_running = True
@@ -174,6 +198,8 @@ class GameManager:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
                         menu_running = False
+                    if event.key == pygame.K_f:
+                        pygame.display.toggle_fullscreen()
                     if event.key == pygame.K_ESCAPE:
                         pygame.quit()
                         sys.exit()
@@ -247,25 +273,23 @@ class GameManager:
         self.show_leaderboard(after_initials=True)
 
     def update_leaderboard(self, initials, score):
-        leaderboard_file = "leaderboard.json"
         try:
-            with open(leaderboard_file, "r") as file:
+            with open(LEADERBOARD_FILE, "r") as file:
                 leaderboard = json.load(file)
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError):
             leaderboard = []
 
         leaderboard.append({"initials": initials, "score": score})
         leaderboard = sorted(leaderboard, key=lambda x: x["score"], reverse=True)[:10]
 
-        with open(leaderboard_file, "w") as file:
+        with open(LEADERBOARD_FILE, "w") as file:
             json.dump(leaderboard, file)
 
     def show_leaderboard(self, after_initials=False):
-        leaderboard_file = "leaderboard.json"
         try:
-            with open(leaderboard_file, "r") as file:
+            with open(LEADERBOARD_FILE, "r") as file:
                 leaderboard = json.load(file)
-        except FileNotFoundError:
+        except (FileNotFoundError, json.JSONDecodeError):
             leaderboard = []
 
         self.screen.fill(self.black)

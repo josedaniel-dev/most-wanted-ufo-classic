@@ -1,16 +1,30 @@
 import pygame
 import sys
+import json
 from config import *
+
+LEADERBOARD_FILE = "leaderboard.json"
+
+
+def get_fonts():
+    if not pygame.font.get_init():
+        pygame.font.init()
+    return (
+        pygame.font.SysFont(None, 36),
+        pygame.font.SysFont("comicsansms", 72),
+        pygame.font.SysFont("comicsansms", 48),
+    )
 
 def main_menu():
     menu_running = True
     while menu_running:
+        font, _, menu_font = get_fonts()
         screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
         screen.fill(BLACK)
-        title_text = MENU_FONT.render("Most Wanted UFO", True, WHITE)
-        start_text = FONT.render("Start Game", True, GREEN)
-        exit_text = FONT.render("Exit", True, RED)
-        fullscreen_text = FONT.render("Full Screen", True, GREEN)
+        title_text = menu_font.render("Most Wanted UFO", True, WHITE)
+        start_text = font.render("Start Game", True, GREEN)
+        exit_text = font.render("Exit", True, RED)
+        fullscreen_text = font.render("Full Screen", True, GREEN)
 
         screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 3))
         screen.blit(start_text, (SCREEN_WIDTH // 2 - start_text.get_width() // 2, SCREEN_HEIGHT // 2))
@@ -26,6 +40,8 @@ def main_menu():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN:
                     menu_running = False
+                if event.key == pygame.K_f:
+                    pygame.display.toggle_fullscreen()
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
@@ -45,12 +61,13 @@ def main_menu():
 def pause_menu():
     paused = True
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font, _, menu_font = get_fonts()
     while paused:
         screen.fill(BLACK)
-        pause_text = MENU_FONT.render("Paused", True, WHITE)
-        resume_text = FONT.render("Press R to Resume", True, GREEN)
-        restart_text = FONT.render("Press Enter to Restart", True, GREEN)
-        quit_text = FONT.render("Press Esc to Quit", True, RED)
+        pause_text = menu_font.render("Paused", True, WHITE)
+        resume_text = font.render("Press R to Resume", True, GREEN)
+        restart_text = font.render("Press Enter to Restart", True, GREEN)
+        quit_text = font.render("Press Esc to Quit", True, RED)
 
         screen.blit(pause_text, (SCREEN_WIDTH // 2 - pause_text.get_width() // 2, SCREEN_HEIGHT // 3))
         screen.blit(resume_text, (SCREEN_WIDTH // 2 - resume_text.get_width() // 2, SCREEN_HEIGHT // 2))
@@ -65,22 +82,22 @@ def pause_menu():
                 sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
-                    paused = False
+                    return "resume"
                 if event.key == pygame.K_RETURN:
-                    pygame.quit()
-                    sys.exit()  # Exit the game instead of restarting
+                    return "restart"
                 if event.key == pygame.K_ESCAPE:
                     pygame.quit()
                     sys.exit()
 
-def show_end_game_message(message):
+def show_end_game_message(message, score=0):
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font, end_game_font, _ = get_fonts()
     screen.fill(BLACK)
-    end_game_text = END_GAME_FONT.render(message, True, RED)
-    score_text = FONT.render(f"Final Score: {score}", True, WHITE)
-    restart_text = FONT.render("Press any key to restart", True, GREEN)
-    continue_text = FONT.render("Press C to Continue", True, GREEN)
-    quit_text = FONT.render("Press Esc to Quit", True, RED)
+    end_game_text = end_game_font.render(message, True, RED)
+    score_text = font.render(f"Final Score: {score}", True, WHITE)
+    restart_text = font.render("Press any key to restart", True, GREEN)
+    continue_text = font.render("Press C to Continue", True, GREEN)
+    quit_text = font.render("Press Esc to Quit", True, RED)
 
     screen.blit(end_game_text, (SCREEN_WIDTH // 2 - end_game_text.get_width() // 2, SCREEN_HEIGHT // 3))
     screen.blit(score_text, (SCREEN_WIDTH // 2 - score_text.get_width() // 2, SCREEN_HEIGHT // 2))
@@ -105,14 +122,15 @@ def show_end_game_message(message):
                 else:
                     waiting_for_input = False
 
-def enter_initials():
+def enter_initials(score=0):
     initials = ""
     enter_initials_running = True
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    _, _, menu_font = get_fonts()
     while enter_initials_running:
         screen.fill(BLACK)
-        enter_initials_text = MENU_FONT.render("Enter Initials:", True, WHITE)
-        initials_text = MENU_FONT.render(initials, True, GREEN)
+        enter_initials_text = menu_font.render("Enter Initials:", True, WHITE)
+        initials_text = menu_font.render(initials, True, GREEN)
         screen.blit(enter_initials_text, (SCREEN_WIDTH // 2 - enter_initials_text.get_width() // 2, SCREEN_HEIGHT // 3))
         screen.blit(initials_text, (SCREEN_WIDTH // 2 - initials_text.get_width() // 2, SCREEN_HEIGHT // 2))
         pygame.display.flip()
@@ -133,33 +151,32 @@ def enter_initials():
     show_leaderboard(after_initials=True)
 
 def update_leaderboard(initials, score):
-    leaderboard_file = "leaderboard.json"
     try:
-        with open(leaderboard_file, "r") as file:
+        with open(LEADERBOARD_FILE, "r") as file:
             leaderboard = json.load(file)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         leaderboard = []
 
     leaderboard.append({"initials": initials, "score": score})
     leaderboard = sorted(leaderboard, key=lambda x: x["score"], reverse=True)[:10]
 
-    with open(leaderboard_file, "w") as file:
+    with open(LEADERBOARD_FILE, "w") as file:
         json.dump(leaderboard, file)
 
 def show_leaderboard(after_initials=False):
-    leaderboard_file = "leaderboard.json"
     try:
-        with open(leaderboard_file, "r") as file:
+        with open(LEADERBOARD_FILE, "r") as file:
             leaderboard = json.load(file)
-    except FileNotFoundError:
+    except (FileNotFoundError, json.JSONDecodeError):
         leaderboard = []
 
     screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+    font, _, menu_font = get_fonts()
     screen.fill(BLACK)
-    title_text = MENU_FONT.render("Leaderboard", True, WHITE)
+    title_text = menu_font.render("Leaderboard", True, WHITE)
     screen.blit(title_text, (SCREEN_WIDTH // 2 - title_text.get_width() // 2, SCREEN_HEIGHT // 16))
     for i, entry in enumerate(leaderboard):
-        entry_text = FONT.render(f"{i + 1}. {entry['initials']} - {entry['score']}", True, GREEN)
+        entry_text = font.render(f"{i + 1}. {entry['initials']} - {entry['score']}", True, GREEN)
         screen.blit(entry_text, (SCREEN_WIDTH // 2 - entry_text.get_width() // 2, SCREEN_HEIGHT // 10 + 60 + i * 30))
 
     pygame.display.flip()

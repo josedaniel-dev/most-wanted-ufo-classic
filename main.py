@@ -105,6 +105,7 @@ def main():
 
             if enemy[1] + game_manager.enemy_size > game_manager.SCREEN_HEIGHT:
                 game_manager.lives -= 1
+                game_manager.lose_life_sound.play()
                 enemies_to_remove.append(enemy)
 
         for enemy in enemies_to_remove:
@@ -209,16 +210,15 @@ def main():
 
         if game_manager.lives <= 0:
             game_manager.enter_initials()
-            game_manager.show_leaderboard(after_initials=True)
             game_manager.show_end_game_message("Game Over")
             game_manager.game_initialize()
-        elif game_manager.lives < 3:
-            game_manager.lose_life_sound.play()
 
         game_manager.particle_system.update()
 
         pygame.display.flip()
         game_manager.clock.tick(44)
+
+    pygame.quit()
 
 if __name__ == "__main__":
     main()
