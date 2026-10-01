@@ -1,4 +1,4 @@
-# 👾 Most Wanted UFO -- **Classic version** 
+# 👾 Most Wanted UFO - ***Classic version*** 
 
 **Most Wanted UFO** is a 2D arcade-style space shooter inspired by classics like *Space Invaders*, developed with **Python** and **Pygame**. The game challenges players to defeat waves of alien enemies, collect power-ups, and achieve high scores while navigating dynamic combat scenarios in space.
 
